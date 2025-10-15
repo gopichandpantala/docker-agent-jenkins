@@ -2,49 +2,35 @@ pipeline {
   agent {
     docker {
       image 'maven:3.9.6-eclipse-temurin-17'
-      args '-v /root/.m2:/root/.m2'
+      args '-v /root/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
   stages {
     stage('Checkout') {
-      steps {
-        echo 'Checking out source code...'
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Build') {
       steps {
-        echo 'Building the project...'
         sh 'mvn clean package -DskipTests'
       }
     }
 
     stage('Test') {
-      steps {
-        echo 'Running tests...'
-        sh 'mvn test'
-      }
+      steps { sh 'mvn test' }
     }
   }
 
   post {
-    success {
-      echo '✅ Build and tests completed successfully!'
-    }
-    failure {
-      echo '❌ Build or test failed.'
-    }
     always {
-      echo '🧹 Cleaning up Docker on Jenkins host...'
-      // Run cleanup on the host node, outside the container
-      node {
-        sh 'docker container prune -f || true'
-        sh 'docker image prune -af || true'
-        sh 'docker network prune -f || true'
-        sh 'docker volume prune -f || true'
-      }
+      echo '🧹 Cleaning up containers and images on host...'
+      sh '''
+        docker container prune -f || true
+        docker image prune -af || true
+        docker network prune -f || true
+        docker volume prune -f || true
+      '''
     }
   }
 }
