@@ -36,5 +36,16 @@ pipeline {
     failure {
       echo '❌ Build or test failed.'
     }
+    always {
+      echo '🧹 Cleaning up Docker...'
+      // Remove stopped containers
+      sh 'docker container prune -f'
+      // Remove unused images
+      sh 'docker image prune -af'
+      // Remove unused networks
+      sh 'docker network prune -f'
+      // Remove dangling volumes
+      sh 'docker volume prune -f'
+    }
   }
 }
